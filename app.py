@@ -10,11 +10,11 @@ from utils_rag import (
 )
 
 def main():
-    st.set_page_config(page_title="Chatbot Services Écosystémiques", layout="centered")
-    st.title("Chatbot sur les Préférences pour les Services Écosystémiques")
+    st.set_page_config(page_title="Chatbot services écosystémiques", layout="centered")
+    st.title("Chatbot sur les préférences pour les services écosystémiques")
 
     st.markdown("""
-    Bienvenue sur le Chatbot des Services Écosystémiques.
+    Bienvenue sur le Chatbot des services écosystémiques.
     Posez vos questions ci-dessous concernant les services écosystémiques.
     """)
 

@@ -20,43 +20,39 @@ def main():
     """)
 
     dossier_pdf = "load_documents_pdf"
-    chemin_chroma = "embeddings_pdf2"
+    chemin_index = "embeddings_pdf2"
 
-    # 1) Charger et indexer les documents au démarrage
+    # 1) Chargement & indexation
     if "vecteur_store" not in st.session_state or st.session_state.vecteur_store is None:
         st.write("Chargement et indexation des documents PDF...")
         docs = charger_donnees_pdf(dossier_pdf)
         st.session_state.docs = docs
 
-        # Extraire uniquement les textes pour l'indexation
         vecteur_store = preparer_et_indexer_documents(
             [doc["texte"] for doc in docs],
-            chemin_chroma
+            chemin_index
         )
 
         st.session_state.vecteur_store = vecteur_store
         st.success("Données indexées avec succès !")
 
-    # 2) Paramètres fixes
+    # 2) Paramètres
     temperature = 0.3
-    model_name = "gpt-3.5-turbo"
 
-    # 3) Construire ou mettre à jour le chatbot RAG
+    # 3) Chatbot
     st.session_state.chatbot = construire_chatbot(
         st.session_state.vecteur_store,
         temperature=temperature
     )
 
-    # 4) Historique des messages (chat)
+    # 4) Historique de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Afficher l'historique dans le chat principal
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    # 5) Champ de saisie de question
     user_input = st.chat_input("Posez votre question ici...")
 
     if user_input:
@@ -67,15 +63,16 @@ def main():
         with st.chat_message("assistant"):
             st.write(bot_answer)
 
-    # 6) Barre latérale : documents chargés + historique
+    # 5) Sidebar : Documents + Historique
     with st.sidebar:
         st.markdown("### 📄 Documents chargés")
         docs = st.session_state.get("docs", [])
         st.write(f"Nombre de documents chargés : {len(docs)}")
 
-        with st.expander("Voir les documents"):
-            for i, doc in enumerate(docs, start=1):
-                st.markdown(f"- **{doc['nom']}**")
+        for i, doc in enumerate(docs, start=1):
+            with st.expander(f"📄 {doc['nom']}"):
+                extrait = doc['texte'][:500].strip().replace("\n", " ")
+                st.markdown(f"```txt\n{extrait}...\n```")
 
         st.markdown("---")
         st.markdown("### 💬 Historique de la session")

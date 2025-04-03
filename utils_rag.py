@@ -3,12 +3,13 @@ import fitz  # PyMuPDF
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 def charger_donnees_pdf(dossier_path):
     documents = []
@@ -27,13 +28,11 @@ def charger_donnees_pdf(dossier_path):
 
 
 def preparer_et_indexer_documents(documents, chemin_index=None):
-    # On envoie uniquement les textes à FAISS
-    textes = [doc["texte"] for doc in documents]
-
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
     )
+    textes = documents  # Ce sont déjà des textes purs (strings)
     docs_split = splitter.create_documents(textes)
 
     embeddings = OpenAIEmbeddings()

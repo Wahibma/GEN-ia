@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 
-# Charger les variables d'environnement (.env)
+# Charger les variables d’environnement
 load_dotenv()
 
 def charger_donnees_pdf(dossier_path):
@@ -35,11 +35,13 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
 
     for t in textes:
         if not isinstance(t, str):
-            raise ValueError(f"Le document n'est pas une chaîne : {t}")
+            raise ValueError(f"Le document n'est pas une chaîne de caractères : {t}")
 
     docs_split = splitter.create_documents(textes)
 
-    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    # Appel sans paramètre direct, clé lue depuis .env automatiquement
+    embeddings = OpenAIEmbeddings()
+
     vecteur_store = FAISS.from_documents(docs_split, embeddings)
 
     if chemin_index:
@@ -51,8 +53,7 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
 def construire_chatbot(vecteur_store, temperature=0.3):
     llm = ChatOpenAI(
         model_name="gpt-3.5-turbo",
-        temperature=temperature,
-        openai_api_key=os.getenv("OPENAI_API_KEY")
+        temperature=temperature
     )
     memory = ConversationBufferMemory(
         memory_key="chat_history",

@@ -9,6 +9,7 @@ from utils_rag import (
     construire_chatbot
 )
 
+# Charger les variables d'environnement
 load_dotenv()
 
 def main():
@@ -23,7 +24,7 @@ def main():
     dossier_pdf = "load_documents_pdf"
     chemin_chroma = "embeddings_pdf2"
 
-    # Indexation si nécessaire
+    # Chargement des PDF et indexation
     if "vecteur_store" not in st.session_state or st.session_state.vecteur_store is None:
         st.info("Chargement et indexation des documents PDF...")
         docs = charger_donnees_pdf(dossier_pdf)
@@ -33,7 +34,7 @@ def main():
         st.session_state.vecteur_store = vecteur_store
         st.success("📚 Données indexées avec succès !")
 
-    # Affichage des documents
+    # Affichage des noms de documents dans la sidebar
     st.sidebar.title("📄 Documents PDF chargés")
     docs = st.session_state.get("docs", [])
     if docs:
@@ -43,14 +44,14 @@ def main():
     else:
         st.sidebar.write("Aucun document chargé.")
 
-    # Création du chatbot
+    # Construction du chatbot
     if "chatbot" not in st.session_state or st.session_state.chatbot is None:
         st.session_state.chatbot = construire_chatbot(
             st.session_state.vecteur_store,
             temperature=0.3
         )
 
-    # Historique de chat
+    # Historique des messages
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -58,7 +59,7 @@ def main():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    # Interaction
+    # Entrée utilisateur
     user_input = st.chat_input("Posez votre question ici...")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -69,7 +70,7 @@ def main():
             st.write(bot_answer)
 
     # Historique dans la sidebar
-    st.sidebar.title("💬 Historique de la session")
+    st.sidebar.title("💬 Historique")
     with st.sidebar.expander("Voir les échanges"):
         if not st.session_state.messages:
             st.write("Aucun échange pour le moment.")

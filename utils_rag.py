@@ -1,13 +1,16 @@
+# utils_rag.py
+
 import os
 import fitz  # PyMuPDF
+from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from dotenv import load_dotenv
 
+# Chargement de la clé API depuis .env
 load_dotenv()
 
 
@@ -28,23 +31,17 @@ def charger_donnees_pdf(dossier_path):
 
 
 def preparer_et_indexer_documents(documents, chemin_index=None):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
-
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     textes = [doc["texte"] for doc in documents if isinstance(doc, dict) and "texte" in doc]
 
     for t in textes:
         if not isinstance(t, str):
-            raise ValueError(f"Un document n'est pas une chaîne de caractères : {t}")
+            raise ValueError(f"Document non valide : {t}")
 
     docs_split = splitter.create_documents(textes)
 
-    # ✅ Fix : passage explicite de la clé API
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-
+    # ✅ Pas besoin de passer la clé ici avec les versions récentes
+    embeddings = OpenAIEmbeddings()
     vecteur_store = FAISS.from_documents(docs_split, embeddings)
 
     if chemin_index:
@@ -54,16 +51,8 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
 
 
 def construire_chatbot(vecteur_store, temperature=0.3):
-    llm = ChatOpenAI(
-        model_name="gpt-3.5-turbo",
-        temperature=temperature,
-        api_key=os.getenv("OPENAI_API_KEY")
-    )
-
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=True
-    )
+    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=temperature)
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     chatbot = ConversationalRetrievalChain.from_llm(
         llm=llm,

@@ -32,7 +32,15 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
         chunk_size=1000,
         chunk_overlap=200
     )
-    textes = documents  # Ce sont déjà des textes purs (strings)
+
+    # ✅ Sécurité : on extrait uniquement les textes valides
+    textes = [doc["texte"] for doc in documents if isinstance(doc, dict) and "texte" in doc]
+
+    # ✅ Vérification finale
+    for t in textes:
+        if not isinstance(t, str):
+            raise ValueError(f"Un document n'est pas une chaîne de caractères : {t}")
+
     docs_split = splitter.create_documents(textes)
 
     embeddings = OpenAIEmbeddings()

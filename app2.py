@@ -35,7 +35,7 @@ def main():
     st.sidebar.title("📄 Documents PDF")
     docs = st.session_state.get("docs", [])
     if docs:
-        with st.sidebar.expander("Voir les documents"):
+        with st.sidebar.expander("Voir les documents chargés"):
             for doc in docs:
                 st.sidebar.markdown(f"- **{doc['nom']}**")
     else:

@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-
 from utils_rag import (
     charger_donnees_pdf,
     preparer_et_indexer_documents,
@@ -20,9 +19,9 @@ def main():
     """)
 
     dossier_pdf = "load_documents_pdf"
-    chemin_index = "embeddings_pdf2"
+    chemin_chroma = "embeddings_pdf2"
 
-    # 1) Chargement & indexation
+    # 1) Chargement et indexation
     if "vecteur_store" not in st.session_state or st.session_state.vecteur_store is None:
         st.write("Chargement et indexation des documents PDF...")
         docs = charger_donnees_pdf(dossier_pdf)
@@ -30,22 +29,18 @@ def main():
 
         vecteur_store = preparer_et_indexer_documents(
             [doc["texte"] for doc in docs],
-            chemin_index
+            chemin_chroma
         )
-
         st.session_state.vecteur_store = vecteur_store
         st.success("Données indexées avec succès !")
 
-    # 2) Paramètres
-    temperature = 0.3
-
-    # 3) Chatbot
+    # 2) LLM + RAG
     st.session_state.chatbot = construire_chatbot(
         st.session_state.vecteur_store,
-        temperature=temperature
+        temperature=0.3
     )
 
-    # 4) Historique de chat
+    # 3) Historique
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -53,8 +48,8 @@ def main():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
+    # 4) Interaction utilisateur
     user_input = st.chat_input("Posez votre question ici...")
-
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
         reponse = st.session_state.chatbot.invoke({"question": user_input})
@@ -63,16 +58,15 @@ def main():
         with st.chat_message("assistant"):
             st.write(bot_answer)
 
-    # 5) Sidebar : Documents + Historique
+    # 5) Barre latérale avec documents et historique
     with st.sidebar:
         st.markdown("### 📄 Documents chargés")
         docs = st.session_state.get("docs", [])
         st.write(f"Nombre de documents chargés : {len(docs)}")
 
-        for i, doc in enumerate(docs, start=1):
-            with st.expander(f"📄 {doc['nom']}"):
-                extrait = doc['texte'][:500].strip().replace("\n", " ")
-                st.markdown(f"```txt\n{extrait}...\n```")
+        with st.expander("Voir les documents"):
+            for i, doc in enumerate(docs, start=1):
+                st.markdown(f"- **{doc['nom']}**")
 
         st.markdown("---")
         st.markdown("### 💬 Historique de la session")

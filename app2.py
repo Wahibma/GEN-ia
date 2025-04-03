@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import os
 from dotenv import load_dotenv
@@ -21,7 +23,7 @@ def main():
     dossier_pdf = "load_documents_pdf"
     chemin_chroma = "embeddings_pdf2"
 
-    # 1) Chargement et indexation
+    # Indexation si nécessaire
     if "vecteur_store" not in st.session_state or st.session_state.vecteur_store is None:
         st.info("Chargement et indexation des documents PDF...")
         docs = charger_donnees_pdf(dossier_pdf)
@@ -31,24 +33,24 @@ def main():
         st.session_state.vecteur_store = vecteur_store
         st.success("📚 Données indexées avec succès !")
 
-    # 2) Affichage des documents PDF
+    # Affichage des documents
     st.sidebar.title("📄 Documents PDF chargés")
     docs = st.session_state.get("docs", [])
     if docs:
-        with st.sidebar.expander("Voir la liste des documents"):
+        with st.sidebar.expander("Voir les documents"):
             for doc in docs:
                 st.sidebar.markdown(f"- **{doc['nom']}**")
     else:
         st.sidebar.write("Aucun document chargé.")
 
-    # 3) Création du chatbot RAG
+    # Création du chatbot
     if "chatbot" not in st.session_state or st.session_state.chatbot is None:
         st.session_state.chatbot = construire_chatbot(
             st.session_state.vecteur_store,
             temperature=0.3
         )
 
-    # 4) Historique de conversation
+    # Historique de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -56,7 +58,7 @@ def main():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    # 5) Saisie utilisateur
+    # Interaction
     user_input = st.chat_input("Posez votre question ici...")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -66,7 +68,7 @@ def main():
         with st.chat_message("assistant"):
             st.write(bot_answer)
 
-    # 6) Historique dans la sidebar
+    # Historique dans la sidebar
     st.sidebar.title("💬 Historique de la session")
     with st.sidebar.expander("Voir les échanges"):
         if not st.session_state.messages:

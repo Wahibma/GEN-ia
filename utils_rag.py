@@ -33,17 +33,18 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
         chunk_overlap=200
     )
 
-    # ✅ Sécurité : on extrait uniquement les textes valides
     textes = [doc["texte"] for doc in documents if isinstance(doc, dict) and "texte" in doc]
 
-    # ✅ Vérification finale
     for t in textes:
         if not isinstance(t, str):
             raise ValueError(f"Un document n'est pas une chaîne de caractères : {t}")
 
     docs_split = splitter.create_documents(textes)
 
-    embeddings = OpenAIEmbeddings()
+    # ✅ Fix : passage explicite de la clé API
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+
     vecteur_store = FAISS.from_documents(docs_split, embeddings)
 
     if chemin_index:
@@ -53,7 +54,12 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
 
 
 def construire_chatbot(vecteur_store, temperature=0.3):
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=temperature)
+    llm = ChatOpenAI(
+        model_name="gpt-3.5-turbo",
+        temperature=temperature,
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+
     memory = ConversationBufferMemory(
         memory_key="chat_history",
         return_messages=True

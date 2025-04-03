@@ -1,18 +1,16 @@
-# app.py
-
 import streamlit as st
 import os
 from dotenv import load_dotenv
+load_dotenv()
+
 from utils_rag import (
     charger_donnees_pdf,
     preparer_et_indexer_documents,
     construire_chatbot
 )
 
-load_dotenv()
-
 def main():
-    st.set_page_config(page_title="Chatbot Services Écosystémiques", layout="centered")
+    st.set_page_config(page_title="Chatbot services écosystémiques", layout="centered")
     st.title("🌿 Chatbot sur les préférences pour les services écosystémiques")
 
     st.markdown("""
@@ -23,30 +21,38 @@ def main():
     dossier_pdf = "load_documents_pdf"
     chemin_chroma = "embeddings_pdf2"
 
+    # 1) Charger et indexer les documents PDF
     if "vecteur_store" not in st.session_state or st.session_state.vecteur_store is None:
-        st.info("Chargement et indexation des documents PDF...")
+        st.write("Chargement et indexation des documents PDF...")
         docs = charger_donnees_pdf(dossier_pdf)
         st.session_state.docs = docs
 
         vecteur_store = preparer_et_indexer_documents(docs, chemin_chroma)
         st.session_state.vecteur_store = vecteur_store
-        st.success("📚 Données indexées avec succès !")
+        st.success("✅ Données indexées avec succès !")
 
-    st.sidebar.title("📄 Documents PDF")
-    docs = st.session_state.get("docs", [])
-    if docs:
-        with st.sidebar.expander("Voir les documents chargés"):
-            for doc in docs:
-                st.sidebar.markdown(f"- **{doc['nom']}**")
+    # ✅ 1bis) Affichage des fichiers PDF chargés
+    st.sidebar.title("📄 Documents chargés")
+    if "docs" in st.session_state and st.session_state.docs:
+        st.sidebar.markdown(f"**Nombre de documents chargés :** {len(st.session_state.docs)}")
+        with st.sidebar.expander("Voir les documents"):
+            for doc in st.session_state.docs:
+                nom = doc["nom"] if isinstance(doc, dict) else doc.metadata.get("source", "Inconnu")
+                st.markdown(f"- {nom}")
     else:
-        st.sidebar.write("Aucun document chargé.")
+        st.sidebar.info("Aucun document PDF chargé.")
 
+    # 2) Paramètres
+    temperature = 0.3
+
+    # 3) Création du chatbot
     if "chatbot" not in st.session_state or st.session_state.chatbot is None:
         st.session_state.chatbot = construire_chatbot(
             st.session_state.vecteur_store,
-            temperature=0.3
+            temperature=temperature
         )
 
+    # 4) Historique
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -54,6 +60,7 @@ def main():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
+    # 5) Saisie utilisateur
     user_input = st.chat_input("Posez votre question ici...")
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -63,8 +70,9 @@ def main():
         with st.chat_message("assistant"):
             st.write(bot_answer)
 
-    st.sidebar.title("💬 Historique")
-    with st.sidebar.expander("Voir les échanges"):
+    # 6) Historique de la session
+    st.sidebar.title("🗂️ Historique de la session")
+    with st.sidebar.expander("Voir l'historique complet"):
         if not st.session_state.messages:
             st.write("Aucun échange pour le moment.")
         else:

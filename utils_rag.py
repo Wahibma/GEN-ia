@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def charger_donnees_pdf(dossier_path):
     documents = []
     for nom_fichier in os.listdir(dossier_path):
@@ -20,22 +19,26 @@ def charger_donnees_pdf(dossier_path):
             texte = ""
             for page in doc:
                 texte += page.get_text()
-            documents.append(texte)
+            documents.append({
+                "nom": nom_fichier,
+                "texte": texte
+            })
     return documents
 
 
 def preparer_et_indexer_documents(documents, chemin_index=None):
+    # On envoie uniquement les textes à FAISS
+    textes = [doc["texte"] for doc in documents]
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
     )
-    docs_split = splitter.create_documents(documents)
+    docs_split = splitter.create_documents(textes)
 
     embeddings = OpenAIEmbeddings()
-
     vecteur_store = FAISS.from_documents(docs_split, embeddings)
 
-    # Sauvegarde locale facultative (pas nécessaire sur Streamlit Cloud)
     if chemin_index:
         vecteur_store.save_local(chemin_index)
 

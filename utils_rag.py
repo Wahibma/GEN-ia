@@ -9,9 +9,13 @@ from langchain.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+from langchain_core.settings import Settings  # ⚠️ Pour config récente
 
-# Chargement de la clé API depuis .env
+# Charger les variables d'environnement
 load_dotenv()
+
+# Configuration explicite de la clé OpenAI pour LangChain
+Settings.set_default("openai_api_key", os.getenv("OPENAI_API_KEY"))
 
 
 def charger_donnees_pdf(dossier_path):
@@ -32,15 +36,16 @@ def charger_donnees_pdf(dossier_path):
 
 def preparer_et_indexer_documents(documents, chemin_index=None):
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+
     textes = [doc["texte"] for doc in documents if isinstance(doc, dict) and "texte" in doc]
 
     for t in textes:
         if not isinstance(t, str):
-            raise ValueError(f"Document non valide : {t}")
+            raise ValueError(f"Le document n'est pas du texte : {t}")
 
     docs_split = splitter.create_documents(textes)
 
-    # ✅ Pas besoin de passer la clé ici avec les versions récentes
+    # Utilisation normale (clé gérée par Settings)
     embeddings = OpenAIEmbeddings()
     vecteur_store = FAISS.from_documents(docs_split, embeddings)
 
@@ -51,8 +56,14 @@ def preparer_et_indexer_documents(documents, chemin_index=None):
 
 
 def construire_chatbot(vecteur_store, temperature=0.3):
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=temperature)
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    llm = ChatOpenAI(
+        model_name="gpt-3.5-turbo",
+        temperature=temperature
+    )
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True
+    )
 
     chatbot = ConversationalRetrievalChain.from_llm(
         llm=llm,
